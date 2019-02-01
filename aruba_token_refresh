@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+import requests
+import json
+import yaml
+import os
+import logging
+import time
+import sys
+from pathlib import Path
+from central import auth
+
+logging.basicConfig(level=logging.CRITICAL)
+logger = logging.getLogger(__name__)
+
+
+
+try: 
+    arg = str(sys.argv[1])
+    account = arg
+except: 
+    account = "default"
+
+logging.info("Account set to: %s", str(account))
+
+def read_config():
+    if os.path.isfile("config.yml"):
+        with open("config.yml", 'r') as ymlfile:
+            data = yaml.load(ymlfile)
+        return data
+    else: 
+        print("Please read the README file and create the config.yml file using the sample.config.yml as a guide")
+    
+
+
+def get_networks(config, sessiondata, tokenfile, account):
+    service_url = config[account]['url'] + "/monitoring/v1/networks"
+    params = {'access_token': sessiondata['access_token']}
+    headers = {"Accept": "application/json"}
+    
+    r = requests.get(service_url, params=params, headers=headers)
+    if r.status_code == 401:
+        #print(vars(get_access_token))
+        # print('Status:', r.status_code, 'Headers:', r.headers,
+        #       'Error Response:', r.reason)
+        return_error = json.loads(r.text)
+        logging.warning(r.text)
+        if return_error["error"] == "invalid_token":
+            logging.warning("Invalid or expired token. Refreshing...")
+            newsession = auth.CentralAuth.refresh_token(config, sessiondata, tokenfile, account)
+            newparams = {'access_token': newsession['access_token']}
+            r = requests.get(service_url, params=newparams, headers=headers)
+    # return(r.json())
+    return(r.status_code)
+        
+
+
+
+def main():
+    try:
+        config=read_config()
+        filetoken = account + "." + config["tokenfile"]
+        logging.info("Token file: %s", filetoken)
+        if os.path.isfile(filetoken):
+            with open(filetoken) as exjsonfile:
+                sessiondata = json.load(exjsonfile)
+                logging.info("Querying Central...")
+        else: 
+            print("Please login to Aruba Central and download the token file and save it as " + account + ".token.json ")
+        d = get_networks(config, sessiondata, filetoken, account)
+        if d == 200:
+            print("refresh_token:", sessiondata['refresh_token'])
+            print("access_token:", sessiondata['access_token'])
+    except:
+        print("The config.yml and/or the " + account + ".token.json are missing.")
+
+
+
+if __name__ == "__main__":
+    logging.info("Executing main...")
+    main()
