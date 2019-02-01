@@ -1,4 +1,4 @@
-# Aruba Central Refresh Token Tool
+# Aruba Central Token Refresh Tool
 
 
 ## Getting Started
