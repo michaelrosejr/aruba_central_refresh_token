@@ -29,6 +29,30 @@ pipenv shell
 aruba_token_refresh
 ```
 
+if you plan to run it frequently, then install the necessary python modules and install the ``aruba_refresh_token`` as a python module.
+
+
+## Additional Features
+If you have more than one API account that you can to refresh token for, you can set them up in the config file as follows:
+
+```
+SecondApi:
+   url: https://apigw-prod2.central.arubanetworks.com
+   envapi:  prod
+   customer_id: 1234567...
+   client_id: 34567...
+   client_secret: 9876543...
+
+```
+
+Once the entry above is saved. You can then execute the refresh for the above account by typing:
+
+```
+aruba_refresh_token SecondApi
+```
+
+This will then refresh the token for that account.
+
 ## Authors
 
 * **Michael Rose Jr.** - [GitHub](https://github.com/michaelrosejr)
