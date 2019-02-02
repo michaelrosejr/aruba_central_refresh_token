@@ -53,6 +53,9 @@ aruba_refresh_token SecondApi
 
 This will then refresh the token for that account.
 
+## Future Features
+Plan on adding code to recreate the access and refresh tokens after the refresh tokens expires after 14 days. The code is already written. I just need to build the CLI for it.
+
 ## Authors
 
 * **Michael Rose Jr.** - [GitHub](https://github.com/michaelrosejr)
