@@ -2,7 +2,7 @@
 
 
 ## Getting Started
-To start, please login to Aruba Central and create an API System Token Under Maintenance -> API Gateway. Once done, download the token and save it as ``defualt.token.json`` in the directory where you installed this script.
+To start, please login to Aruba Central and create an API account. To do this go to Account Home -> API Gateway -> System Apps & Tokens, then click on the + sign to "Add Apps and Tokens". 
 
 You'll also need to create a ``config.yml`` file. There's a ``config.yml.orig`` that you should use as a template or just rename ```config.yaml.org``` to ```config.yml```. You'll need the following info:
 
@@ -10,8 +10,18 @@ URL for access the Aruba Central API for your region
 customer_id for identify who you are as a customer
 client_id for identify your API ID
 client_secret for accessing your API
+username
+password
 
-once done, run aruba_refresh_token and it will refresh your Aruba Central token and post the access_token and refresh_token on the scren.
+Once you have created your config.yml with the information for your account, run the following command.
+
+```aruba_token_refresh```
+
+This will download or create a new access_token and save them in default.token.json (or companyname.token.json). 
+
+
+## SSO
+If you have SSO setup on your account, you'll need to create a new Central login that doesn't use SSO. I use an email alias for my coporate account that isn't using the same domain as my SSO account. Others have used personal accounts. This account is only used to generate or refresh access_tokens.
 
 ## Start-Up
 Onces the ``default.token.json`` and ``config.yml`` files have been created. 
