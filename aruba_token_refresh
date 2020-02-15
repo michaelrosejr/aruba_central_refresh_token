@@ -25,14 +25,78 @@ logging.info("Account set to: %s", str(account))
 def read_config():
     if os.path.isfile("config.yml"):
         with open("config.yml", 'r') as ymlfile:
-            data = yaml.load(ymlfile)
+            data = yaml.load(ymlfile, Loader=yaml.FullLoader)
         return data
     else: 
         print("Please read the README file and create the config.yml file using the sample.config.yml as a guide")
     
+def get_login(config):
+    auth_url = config[account]['url'] + "/oauth2/authorize/central/api/login"
+    # print(config)
+    params = { "client_id": config[account]['client_id'] }
+    headers = { "Content-Type": "application/json" }
+    data = { "username": config[account]['username'], "password": config[account]['password'] }
+    # print("DATA: ", json.dumps(data))
+    s = requests.Session()
+    # print(auth_url)
+    r = s.post(auth_url, headers=headers, params=params, data=json.dumps(data), verify=True, timeout=10)
+    if r.status_code == 200:
+        for i in r.cookies:
+            if i.name == "csrftoken":
+                csrftoken = i.value
+            if i.name == "session":
+                csession = i.value
+    else:
+        print("ERROR CODE: " + str(r.status_code))
+        print("ERORR Detail: " + str(r.text))
+    # print("CRSFTOKEN: ", csrftoken)
+    # print("SESSIONINFO: ", csession)
 
+    return csrftoken, csession
 
+# def get_authcode(csrftoken, csession, config):
+def get_authcode(sdata, config):
+    auth_url = config[account]['url'] + "/oauth2/authorize/central/api"
+    # print(config)
+    csrftoken = sdata[0]
+    csession = sdata[1]
+    headers = {"Content-Type":"application/json",
+                "X-CSRF-TOKEN": csrftoken,
+                "Cookie":"session="+ csession}   
+    params = {"client_id": config[account]['client_id'], "response_type": "code", "scope": "all"}
+    data = {"customer_id" : str(config[account]['customer_id'])}
+    s = requests.Session()
+    result = s.post(auth_url, headers=headers, params=params,
+                    data=json.dumps(data), verify=True, timeout=10)
+    if result.status_code == 200 :
+        tmp = json.loads(result.text)
+        authcode = tmp['auth_code']
+    else :
+        print("status code : " + str(result.status_code))
+        print("text : " + str(result.text))
+        exit(0)
+
+    print("authcode: ", authcode)
+    return authcode
+
+def get_access_token(authcode, config):
+    token_url = config[account]['url'] + "/oauth2/token"
+    data = {}
+    headers = {}
+    params = {"client_id": config[account]['client_id'], "client_secret": config[account]['client_secret'], 
+                "grant_type": "authorization_code", "code": authcode}
+    r = requests.post(token_url, headers=headers, params=params,
+                    data=json.dumps(data), verify=True, timeout=10)
+    if r.status_code == 200:
+        # print("ACCOUNT NAME: ", config)
+        with open( account + ".token.json", 'w') as newtokenfile:
+            newtokenfile.write(r.text)
+            print(r.text)
+    else:
+        print("STATUS CODE: {} \nDetail: {}".format(str(r.status_code, r.text)))
+    
 def get_networks(config, sessiondata, tokenfile, account):
+
     service_url = config[account]['url'] + "/monitoring/v1/networks"
     params = {'access_token': sessiondata['access_token']}
     headers = {"Accept": "application/json"}
@@ -64,16 +128,26 @@ def main():
             with open(filetoken) as exjsonfile:
                 sessiondata = json.load(exjsonfile)
                 logging.info("Querying Central...")
-        else: 
-            print("Please login to Aruba Central and download the token file and save it as " + account + ".token.json ")
+        else:
+            print("Can't find token file. Requesting auth_code to generate access_token.")
+            logging.warning("Token file not found. Contacting central for new access token")
+            # get_login(config)
+            exit()
+            
+            
+        # else: 
+        #     print("Please login to Aruba Central and download the token file and save it as " + account + ".token.json ")
         d = get_networks(config, sessiondata, filetoken, account)
         if d == 200:
-            print("refresh_token:", sessiondata['refresh_token'])
-            print("access_token:", sessiondata['access_token'])
+            print("Customer_ID: ", account)
+            print("Token file: ", filetoken)
+            print("refresh_token: ", sessiondata['refresh_token'])
+            print("access_token: ", sessiondata['access_token'])
     except:
-        print("The config.yml and/or the " + account + ".token.json are missing.")
-
-
+        # print("The config.yml and/or the " + account + ".token.json are missing.")
+        print("Getting access token...")
+        # print(get_login(config))
+        get_access_token(get_authcode(get_login(config), config), config)
 
 if __name__ == "__main__":
     logging.info("Executing main...")
