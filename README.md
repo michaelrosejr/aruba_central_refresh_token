@@ -36,7 +36,7 @@ if you plan to run it frequently, then install the necessary python modules and 
 If you have more than one API account that you can to refresh token for, you can set them up in the config file as follows:
 
 ```
-SecondApi:
+PickleShoes:
    url: https://apigw-prod2.central.arubanetworks.com
    envapi:  prod
    customer_id: 1234567...
@@ -48,10 +48,10 @@ SecondApi:
 Once the entry above is saved. You can then execute the refresh for the above account by typing:
 
 ```
-aruba_refresh_token SecondApi
+aruba_refresh_token PickleShoes
 ```
 
-This will then refresh the token for that account.
+This will then refresh the token or request an authcode and access token for that account you specified.
 
 ## Future Features
 Plan on adding code to recreate the access and refresh tokens after the refresh tokens expires after 14 days. The code is already written. I just need to build the CLI for it.
